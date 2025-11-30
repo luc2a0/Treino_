@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz de Quadrados</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #111827, #1f2933);
+      color: #f9fafb;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 18px 24px;
+      box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .app h1 {
+      margin: 0 0 4px;
+      font-size: 1.3rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #9ca3af;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: rgba(55, 65, 81, 0.8);
+      color: #e5e7eb;
+    }
+
+    .card {
+      padding: 16px 14px;
+      border-radius: 12px;
+      background: rgba(31, 41, 55, 0.95);
+      margin-bottom: 14px;
+    }
+
+    .question {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .question strong {
+      font-size: 1.1rem;
+      color: #fbbf24;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #f9fafb;
+      outline: none;
+    }
+
+    input[type="number"]:focus {
+      border-color: #fbbf24;
+      box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.7);
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fbbf24;
+      color: #111827;
+      transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.15s ease;
+      min-width: 90px;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    button.secondary {
+      background: #374151;
+      color: #e5e7eb;
+      min-width: 120px;
+    }
+
+    .feedback {
+      min-height: 20px;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .feedback.correct {
+      color: #4ade80;
+    }
+
+    .feedback.incorrect {
+      color: #f97373;
+    }
+
+    .final-score {
+      text-align: center;
+      margin-top: 8px;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        border-radius: 0;
+        max-width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .status-row {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      button {
+        padding: 11px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Quiz de Quadrados</h1>
+    <p class="subtitle">De 1 a 30 — responda o quadrado de cada número.</p>
+
+    <div class="status-row">
+      <span id="progress" class="badge">Pergunta 0/10</span>
+      <span id="scoreInfo">Pontuação: 0</span>
+    </div>
+
+    <div id="quizArea">
+      <div class="card">
+        <div id="questionText" class="question">
+          Clique em <strong>Começar</strong> para iniciar as 10 perguntas.
+        </div>
+        <div class="input-row">
+          <input id="answerInput" type="number" inputmode="numeric" placeholder="Digite o quadrado" disabled />
+          <button id="actionBtn">Começar</button>
+        </div>
+        <div id="feedback" class="feedback"></div>
+      </div>
+
+      <div id="finalArea" style="display:none;">
+        <p class="final-score" id="finalScoreText"></p>
+        <div style="text-align:center;">
+          <button class="secondary" id="restartBtn">Jogar novamente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL_QUESTIONS = 10;
+
+    const progressEl = document.getElementById('progress');
+    const scoreInfoEl = document.getElementById('scoreInfo');
+    const questionTextEl = document.getElementById('questionText');
+    const answerInputEl = document.getElementById('answerInput');
+    const actionBtnEl = document.getElementById('actionBtn');
+    const feedbackEl = document.getElementById('feedback');
+    const finalAreaEl = document.getElementById('finalArea');
+    const finalScoreTextEl = document.getElementById('finalScoreText');
+    const restartBtnEl = document.getElementById('restartBtn');
+
+    let numbers = [];
+    let currentIndex = -1;
+    let score = 0;
+    let waitingNext = false;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function startQuiz() {
+      numbers = shuffle([...Array(30).keys()].map(n => n + 1)).slice(0, TOTAL_QUESTIONS);
+      currentIndex = -1;
+      score = 0;
+      waitingNext = false;
+      scoreInfoEl.textContent = `Pontuação: ${score}`;
+      finalAreaEl.style.display = 'none';
+      answerInputEl.disabled = false;
+      answerInputEl.value = '';
+      feedbackEl.textContent = '';
+      actionBtnEl.textContent = 'Responder';
+      nextQuestion();
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex >= TOTAL_QUESTIONS) {
+        endQuiz();
+        return;
+      }
+      const n = numbers[currentIndex];
+      progressEl.textContent = `Pergunta ${currentIndex + 1}/${TOTAL_QUESTIONS}`;
+      questionTextEl.innerHTML = `Qual é o quadrado de <strong>${n}</strong>?`;
+      answerInputEl.value = '';
+      answerInputEl.focus();
+      feedbackEl.textContent = '';
+      feedbackEl.className = 'feedback';
+      waitingNext = false;
+      actionBtnEl.textContent = 'Responder';
+    }
+
+    function checkAnswer() {
+      if (waitingNext) {
+        nextQuestion();
+        return;
+      }
+
+      const n = numbers[currentIndex];
+      const correct = n * n;
+      const value = parseInt(answerInputEl.value, 10);
+
+      if (isNaN(value)) {
+        feedbackEl.textContent = 'Digite um número antes de responder.';
+        feedbackEl.className = 'feedback incorrect';
+        answerInputEl.focus();
+        return;
+      }
+
+      if (value === correct) {
+        score++;
+        feedbackEl.textContent = 'Correto! ✔️';
+        feedbackEl.className = 'feedback correct';
+      } else {
+        feedbackEl.textContent = `Incorreto. O correto é ${correct}.`;
+        feedbackEl.className = 'feedback incorrect';
+      }
+
+      scoreInfoEl.textContent = `Pontuação: ${score}`;
+      waitingNext = true;
+      actionBtnEl.textContent = currentIndex + 1 === TOTAL_QUESTIONS ? 'Ver resultado' : 'Próxima';
+    }
+
+    function endQuiz() {
+      answerInputEl.disabled = true;
+      questionTextEl.textContent = 'Fim das perguntas.';
+      feedbackEl.textContent = '';
+      actionBtnEl.textContent = 'Recomeçar';
+      finalScoreTextEl.textContent = `Você fez ${score} de ${TOTAL_QUESTIONS} pontos.`;
+      finalAreaEl.style.display = 'block';
+      waitingNext = false;
+    }
+
+    actionBtnEl.addEventListener('click', () => {
+      if (currentIndex === -1) {
+        startQuiz();
+      } else if (currentIndex >= TOTAL_QUESTIONS) {
+        startQuiz();
+      } else {
+        checkAnswer();
+      }
+    });
+
+    restartBtnEl.addEventListener('click', startQuiz);
+
+    answerInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!answerInputEl.disabled) {
+          actionBtnEl.click();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
